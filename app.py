@@ -13,16 +13,37 @@ st.set_page_config(
 
 # UCP Custom Branding CSS
 st.markdown("""
-    
+    <style>
+    .main-header {
+        background-color: #800000;
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .main-header h1 { color: #FFD700 !important; margin: 0; }
+    .main-header h3 { color: #FFFFFF !important; margin: 5px 0 0 0; }
+    .main-header p { color: #F0F0F0; margin-top: 5px; }
+    .stButton>button {
+        background-color: #800000;
+        color: white;
+        border-radius: 5px;
+    }
+    .stButton>button:hover {
+        background-color: #002147;
+        color: #FFD700;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 # Header / Hero Section
 st.markdown("""
-    
-        University of Central Punjab
-        Student Career & Placement Portal
-        Empowering UCP Graduates for Professional Success
-    
+    <div class="main-header">
+        <h1>University of Central Punjab</h1>
+        <h3>Student Career & Placement Portal</h3>
+        <p>Empowering UCP Graduates for Professional Success</p>
+    </div>
 """, unsafe_allow_html=True)
 
 # Key Statistics Metrics
@@ -38,11 +59,13 @@ st.markdown("---")
 st.sidebar.image("https://raw.githubusercontent.com/streamlit/streamlit/main/docs/static/logo.png", width=120)
 st.sidebar.title("Configuration")
 
-# Retrieve key from st.secrets if available, else require manual entry
+# Safe check for st.secrets to avoid crashes
+default_api_key = st.secrets["GROQ_API_KEY"] if "GROQ_API_KEY" in st.secrets else ""
+
 api_key_input = st.sidebar.text_input(
     "Groq API Key",
     type="password",
-    value=st.secrets.get("GROQ_API_KEY", ""),
+    value=default_api_key,
     help="Enter your Groq API key for the AI Career Assistant."
 )
 
