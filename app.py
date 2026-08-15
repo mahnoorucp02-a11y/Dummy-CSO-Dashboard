@@ -1,142 +1,188 @@
+# app.py
 import streamlit as st
+import pandas as pd
+from groq import Groq
+from data import FACULTIES, JOB_LISTINGS, COUNSELORS
 
-# Custom CSS for UI Enhancement
-st.markdown(
-    """
-    <style>
-    /* Main container padding */
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1100px;
-    }
-
-    /* Hero Banner Gradient Styling */
-    .hero-banner {
-        background: linear-gradient(135deg, #7A0000 0%, #4A0000 100%);
-        color: white;
-        padding: 2.5rem 1.5rem;
-        border-radius: 16px;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        margin-bottom: 2rem;
-    }
-    .hero-banner h1 {
-        color: #FFD700 !important;
-        font-size: 2.2rem !important;
-        font-weight: 700 !important;
-        margin-bottom: 0.5rem !important;
-    }
-    .hero-banner h3 {
-        color: #FFFFFF !important;
-        font-size: 1.3rem !important;
-        font-weight: 500 !important;
-        margin-bottom: 0.5rem !important;
-    }
-    .hero-banner p {
-        color: #E0E0E0 !important;
-        font-size: 0.95rem !important;
-        margin: 0 !important;
-    }
-
-    /* Modern Styled Metric Cards */
-    div[data-testid="stMetric"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
-    div[data-testid="stMetricLabel"] {
-        color: #64748B !important;
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-    }
-    div[data-testid="stMetricValue"] {
-        color: #1E293B !important;
-        font-size: 1.8rem !important;
-        font-weight: 700 !important;
-    }
-
-    /* Tabs Styling */
-    button[data-baseweb="tab"] {
-        font-weight: 600 !important;
-        border-radius: 8px !important;
-        padding: 0.5rem 1rem !important;
-    }
-
-    /* Input Field & Select Box Focus Styling */
-    div[data-baseweb="select"] > div {
-        border-radius: 8px !important;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
+# Page Configuration
+st.set_page_config(
+    page_title="UCP Student Career & Placement Portal",
+    page_icon="🎓",
+    layout="wide"
 )
 
-# 1. Sidebar Cleanup
-with st.sidebar:
-    st.header("⚙️ Settings")
-    with st.expander("🔑 API Configuration", expanded=True):
-        groq_api_key = st.text_input(
-            "Groq API Key", type="password", help="Enter your Groq API key here"
-        )
+# UCP Custom Branding CSS
+st.markdown("""
+    <style>
+    .main-header {
+        background-color: #800000;
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .main-header h1 { color: #FFD700 !important; margin: 0; }
+    .main-header h3 { color: #FFFFFF !important; margin: 5px 0 0 0; }
+    .main-header p { color: #F0F0F0; margin-top: 5px; }
+    .stButton>button {
+        background-color: #800000;
+        color: white;
+        border-radius: 5px;
+    }
+    .stButton>button:hover {
+        background-color: #002147;
+        color: #FFD700;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# 2. Custom Hero Banner HTML
-st.markdown(
-    """
-    <div class="hero-banner">
+# Header / Hero Section
+st.markdown("""
+    <div class="main-header">
         <h1>University of Central Punjab</h1>
         <h3>Student Career & Placement Portal</h3>
         <p>Empowering UCP Graduates for Professional Success</p>
     </div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
-# 3. Metrics Layout with Cards
-m1, m2, m3, m4 = st.columns(4)
-with m1:
-    st.metric("Active Job Listings", "120+")
-with m2:
-    st.metric("Hiring Partners", "85")
-with m3:
-    st.metric("Placement Rate", "92%")
-with m4:
-    st.metric("1-on-1 Sessions Done", "450+")
+# Key Statistics Metrics
+col1, col2, col3, col4 = st.columns(4)
+col1.metric(label="Active Job Listings", value="120+")
+col2.metric(label="Hiring Partners", value="85")
+col3.metric(label="Placement Rate", value="92%")
+col4.metric(label="1-on-1 Sessions Done", value="450+")
 
 st.markdown("---")
 
-# 4. Tabs & Form Section
-tab1, tab2, tab3, tab4 = st.tabs(
-    [
-        "📋 Job & Internship Board",
-        "📅 1-on-1 Advisory Sessions",
-        "🤖 AI Career Assistant",
-        "📚 Career Services & Resources",
-    ]
+# Sidebar: Groq API Key Setup
+st.sidebar.image("https://raw.githubusercontent.com/streamlit/streamlit/main/docs/static/logo.png", width=120)
+st.sidebar.title("Configuration")
+
+# Safe secret retrieval using try-except
+try:
+    default_api_key = st.secrets.get("GROQ_API_KEY", "")
+except Exception:
+    default_api_key = ""
+
+# Added unique key parameter to resolve StreamlitDuplicateElementId error
+api_key_input = st.sidebar.text_input(
+    "Groq API Key",
+    type="password",
+    value=default_api_key,
+    key="ucp_groq_api_key_input",
+    help="Enter your Groq API key for the AI Career Assistant."
 )
 
+# Main Tabs Navigation
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📋 Job & Internship Board",
+    "📅 1-on-1 Advisory Sessions",
+    "🤖 AI Career Assistant",
+    "📚 Career Services & Resources"
+])
+
+# TAB 1: Job & Internship Board
+with tab1:
+    st.subheader("Faculty-Wise Opportunities")
+    selected_faculty = st.selectbox("Select Faculty:", FACULTIES)
+    
+    listings = JOB_LISTINGS.get(selected_faculty, [])
+    st.write(f"Showing **{len(listings)}** listings for **{selected_faculty}**:")
+    
+    for job in listings:
+        with st.expander(f"📌 {job['title']} — {job['company']} ({job['type']})"):
+            st.write(f"**Location:** {job['location']}")
+            st.write(f"**Application Deadline:** {job['deadline']}")
+            st.write(f"**Requirements:** {job['reqs']}")
+            
+            # Apply Modal Form
+            with st.form(key=f"apply_form_{job['id']}"):
+                st.subheader("Apply for this Position")
+                student_name = st.text_input("Full Name")
+                student_email = st.text_input("UCP Student Email")
+                student_roll = st.text_input("Roll Number (e.g., L1F20BSCS0000)")
+                resume = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
+                
+                submitted = st.form_submit_button("Submit Application")
+                if submitted:
+                    if student_name and student_email and resume:
+                        st.success(f"Application submitted successfully for {job['title']}! Confirmation sent to {student_email}.")
+                    else:
+                        st.error("Please fill in all details and upload your resume.")
+
+# TAB 2: 1-on-1 Advisory Sessions
 with tab2:
     st.subheader("Book a Career Consultation")
+    c1, c2 = st.columns(2)
+    
+    with c1:
+        selected_counselor = st.selectbox("Select Advisor:", [c["name"] + f" ({c['specialty']})" for c in COUNSELORS])
+        session_topic = st.selectbox("Session Topic:", [
+            "Resume & CV Review",
+            "Mock Technical/HR Interview",
+            "Career Path Counseling",
+            "LinkedIn Profile Optimization"
+        ])
+        booking_date = st.date_input("Preferred Date")
+        booking_time = st.time_input("Preferred Time")
+        
+    with c2:
+        st.info("💡 **Advisor Info**\nSessions are held virtually via MS Teams or in-person at the UCP Career Services Office (Building A, 2nd Floor).")
+        notes = st.text_area("Specific Notes or Questions for Counselor:")
+        if st.button("Confirm Booking"):
+            st.balloons()
+            st.success(f"Booking Confirmed with {selected_counselor} on {booking_date} at {booking_time}!")
 
-    col1, col2 = st.columns([1, 1], gap="medium")
+# TAB 3: AI Career Assistant (Groq API)
+with tab3:
+    st.subheader("UCP AI Career Assistant")
+    st.caption("Powered by Groq API — Ask questions about resume crafting, interview tips, or career guidance.")
 
-    with col1:
-        advisor = st.selectbox(
-            "Select Advisor:", ["Dr. Sarah Ahmed (Tech & Engineering)", "Prof. Ali Khan (Business & Marketing)"]
-        )
-        date = st.date_input("Select Date:")
-        st.button("Confirm Booking", type="primary", use_container_width=True)
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "Hello! I am your UCP AI Career Assistant. How can I help prepare you for your job search today?"}
+        ]
 
-    with col2:
-        st.info(
-            "💡 **Advisor Info**\n\n"
-            "Sessions are held virtually via **MS Teams** or in-person at the "
-            "**UCP Career Services Office** (Building A, 2nd Floor)."
-        )
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    if prompt := st.chat_input("Ask a question..."):
+        if not api_key_input:
+            st.error("Please enter your Groq API Key in the sidebar to use the AI assistant.")
+        else:
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            st.chat_message("user").write(prompt)
+
+            try:
+                client = Groq(api_key=api_key_input)
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "You are an expert career counselor at the University of Central Punjab (UCP). Provide concise, encouraging, and actionable advice tailored to university students."}
+                    ] + st.session_state.messages
+                )
+                ai_reply = response.choices[0].message.content
+                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                st.chat_message("assistant").write(ai_reply)
+            except Exception as e:
+                st.error(f"Error communicating with Groq API: {str(e)}")
+
+# TAB 4: Student Career Services & Resources
+with tab4:
+    st.subheader("Downloads & Campus Placement Drives")
+    r1, r2 = st.columns(2)
+    
+    with r1:
+        st.markdown("### 📄 Resume & CV Templates")
+        st.download_button("Download Standard UCP Resume Template (.docx)", data="Sample Template Content", file_name="UCP_Resume_Template.docx")
+        st.download_button("Download Tech/CS Resume Template (.docx)", data="Sample Tech Template Content", file_name="UCP_Tech_Resume_Template.docx")
+        
+    with r2:
+        st.markdown("### 🗓️ Upcoming Campus Drives")
+        events_df = pd.DataFrame([
+            {"Company": "Systems Ltd", "Date": "2026-09-05", "Venue": "Auditorium 1"},
+            {"Company": "NetSol Technologies", "Date": "2026-09-12", "Venue": "Auditorium 2"},
+            {"Company": "KPMG Pakistan", "Date": "2026-09-18", "Venue": "Executive Hall"}
+        ])
+        st.table(events_df)
