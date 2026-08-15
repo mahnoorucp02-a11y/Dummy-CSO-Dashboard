@@ -59,23 +59,18 @@ st.markdown("---")
 st.sidebar.image("https://raw.githubusercontent.com/streamlit/streamlit/main/docs/static/logo.png", width=120)
 st.sidebar.title("Configuration")
 
-# Safe check for st.secrets to avoid crashes
 # Safe secret retrieval using try-except
 try:
     default_api_key = st.secrets.get("GROQ_API_KEY", "")
 except Exception:
     default_api_key = ""
 
+# Added unique key parameter to resolve StreamlitDuplicateElementId error
 api_key_input = st.sidebar.text_input(
     "Groq API Key",
     type="password",
     value=default_api_key,
-    help="Enter your Groq API key for the AI Career Assistant."
-)
-api_key_input = st.sidebar.text_input(
-    "Groq API Key",
-    type="password",
-    value=default_api_key,
+    key="ucp_groq_api_key_input",
     help="Enter your Groq API key for the AI Career Assistant."
 )
 
