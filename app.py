@@ -60,8 +60,18 @@ st.sidebar.image("https://raw.githubusercontent.com/streamlit/streamlit/main/doc
 st.sidebar.title("Configuration")
 
 # Safe check for st.secrets to avoid crashes
-default_api_key = st.secrets["GROQ_API_KEY"] if "GROQ_API_KEY" in st.secrets else ""
+# Safe secret retrieval using try-except
+try:
+    default_api_key = st.secrets.get("GROQ_API_KEY", "")
+except Exception:
+    default_api_key = ""
 
+api_key_input = st.sidebar.text_input(
+    "Groq API Key",
+    type="password",
+    value=default_api_key,
+    help="Enter your Groq API key for the AI Career Assistant."
+)
 api_key_input = st.sidebar.text_input(
     "Groq API Key",
     type="password",
